@@ -90,11 +90,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File src\install.ps1
 
 ## 来源与致谢
 
-* **图标**：`assets/icon-source.jpg`（作者提供的角色插画）由 `src/build-icon.mjs --source …`
-  渲染成 16/24/32/48/64/128/256 七个尺寸的 `assets/dsh.ico`，≤64px 用传统 32bpp DIB 条目，
-  128/256 用 PNG 压缩条目。渲染规则是**等比缩放、完整放入画布、不裁切**（不会为了凑正方形
-  切掉上边或下边），只会按 `--square` 决定四角是圆角还是直角（默认圆角）。
-  想换成自己的图：`node src/build-icon.mjs assets --source 你的图.png`。
+* **图标**：`assets/icon-source.png`（作者提供的角色插画，平涂风格，小尺寸下轮廓依然清楚）由
+  `src/build-icon.mjs --source …` 渲染成 16/24/32/48/64/128/256 七个尺寸的 `assets/dsh.ico`，
+  ≤64px 用传统 32bpp DIB 条目，128/256 用 PNG 压缩条目。渲染规则是**等比缩放、完整放入画布、
+  不裁切**（不会为了凑正方形切掉上边或下边），只会按 `--square` 决定四角是圆角还是直角
+  （默认圆角）。换图：`node src/build-icon.mjs assets --source 你的图.png`。
 * **脚本默认素材**（不带 `--source`）仍然是 DSH 原版鲸鱼标：取自 DeepSeek Harness 包内的
   `@deepseek-ai/dsh-web-frontend/dist/favicon.svg`，重新着色为白色、衬在 DSH 深色品牌底色
   `#0F1115`（对应主题变量 `--dsw-static-neutral-bluish-1000`）的圆角方块上。
