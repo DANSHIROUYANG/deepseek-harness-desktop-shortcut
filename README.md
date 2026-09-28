@@ -3,7 +3,7 @@
 给 [DeepSeek Harness](https://github.com/deepseek-ai)（`dsh web`）做一个 Windows 桌面图标：
 **双击就打开 Harness 的 Web GUI** —— 服务已经在跑就直接开页面，没跑就静默地在后台把它拉起来。
 
-> 非官方项目，与 DeepSeek 官方无关。图标里的鲸鱼图案来自 DSH 自带的 favicon，版权归 DeepSeek 所有，详见「[来源与致谢](#来源与致谢)」。
+> 非官方项目，与 DeepSeek 官方无关。图标素材与出处详见「[来源与致谢](#来源与致谢)」。
 
 ![图标预览](assets/preview-256.png)
 
@@ -90,13 +90,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File src\install.ps1
 
 ## 来源与致谢
 
-* **图标图形**：来自 DeepSeek Harness 包内的
-  `@deepseek-ai/dsh-web-frontend/dist/favicon.svg`（DeepSeek 的鲸鱼标）。`src/build-icon.mjs`
-  把它重新着色为白色、放到 DSH 深色品牌底色 `#0F1115`（对应 DSH 主题变量
-  `--dsw-static-neutral-bluish-1000`）的圆角方块上，并打包成 16/24/32/48/64/128/256 七个尺寸的
-  `assets/dsh.ico`（≤64px 用传统 32bpp DIB，128/256 用 PNG 压缩条目）。
-* **DeepSeek / DeepSeek Harness 的名称与图形商标**归 DeepSeek 所有。本仓库是非官方的个人
-  便捷脚本，未获官方背书；图标仅在"启动本机 DSH"这一用途下沿用，请勿用于其他商业场景。
+* **图标**：`assets/icon-source.jpg`（作者提供的角色插画）由 `src/build-icon.mjs --source …`
+  渲染成 16/24/32/48/64/128/256 七个尺寸的 `assets/dsh.ico`，≤64px 用传统 32bpp DIB 条目，
+  128/256 用 PNG 压缩条目。渲染规则是**等比缩放、完整放入画布、不裁切**（不会为了凑正方形
+  切掉上边或下边），只会按 `--square` 决定四角是圆角还是直角（默认圆角）。
+  想换成自己的图：`node src/build-icon.mjs assets --source 你的图.png`。
+* **脚本默认素材**（不带 `--source`）仍然是 DSH 原版鲸鱼标：取自 DeepSeek Harness 包内的
+  `@deepseek-ai/dsh-web-frontend/dist/favicon.svg`，重新着色为白色、衬在 DSH 深色品牌底色
+  `#0F1115`（对应主题变量 `--dsw-static-neutral-bluish-1000`）的圆角方块上。
+* **DeepSeek / DeepSeek Harness 的名称与图形商标**归 DeepSeek 所有，本仓库是非官方的个人
+  便捷脚本，未获官方背书。
 * 启动器只是**调用**本机已安装的 `@deepseek-ai/dsh`，不修改、不重分发 DSH 本体。
 * 生成图标用到的 `sharp` 来自 DSH 自带的依赖，本仓库不打包它。
 

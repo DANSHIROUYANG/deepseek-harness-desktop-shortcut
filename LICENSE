@@ -26,7 +26,11 @@ NOTICE / 例外说明
 
 上面这段 MIT 许可只覆盖本仓库的**代码**。
 
-仓库中的图标文件（assets/dsh.ico、assets/preview-256.png）由
-@deepseek-ai/dsh-web-frontend 包内的 favicon.svg（DeepSeek 的鲸鱼图形标识）派生而来，
-该图形标识及 "DeepSeek"、"DeepSeek Harness" 名称的权利归 DeepSeek 所有，
-**不在上述 MIT 授权范围内**，仅在本项目「启动本机 DeepSeek Harness」的用途下沿用。
+仓库中的图像文件（assets/icon-source.jpg、assets/dsh.ico、assets/preview-256.png）是项目
+作者提供的角色插画及其派生图标，**不在上述 MIT 授权范围内**，版权归插画作者/原权利人所有；
+发布或再使用前请自行确认授权。
+
+脚本默认生成的 DeepSeek 鲸鱼标图标，其素材来自 @deepseek-ai/dsh-web-frontend 包内的
+favicon.svg，"DeepSeek"、"DeepSeek Harness" 的名称与图形标识权利归 DeepSeek 所有。
+本项目为非官方项目，与该标识相关的使用仅限于「启动本机 DeepSeek Harness」这一用途。
+

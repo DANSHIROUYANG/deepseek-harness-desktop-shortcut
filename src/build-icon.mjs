@@ -1,35 +1,54 @@
 /**
  * 生成 assets/dsh.ico —— DeepSeek Harness 桌面图标。
  *
- * 素材：DSH 自带 Web UI 的 favicon（DeepSeek 鲸鱼标），位于
- *   <dsh 安装目录>/node_modules/@deepseek-ai/dsh-web-frontend/dist/favicon.svg
- * 版权与出处见 README「来源与致谢」。这里把鲸鱼重新着色为白色，居中放在
- * DSH 深色品牌底色（--dsw-static-neutral-bluish-1000，即 #0F1115）的圆角方块上，
- * 这样在浅色和深色壁纸下都看得清。
+ * 两种素材来源：
+ *   1) 默认：DSH 自带 Web UI 的 favicon（DeepSeek 鲸鱼标），重新着色为白色，衬在 DSH 深色
+ *      品牌底色（--dsw-static-neutral-bluish-1000，即 #0F1115）的圆角方块上。
+ *   2) --source <图片>：换成你自己的图（png / jpg / webp / svg）。图片按**等比缩放、完整放入**
+ *      处理，**不做任何裁切**（不会为了凑正方形切掉上边或下边），只是把四角切成圆角，
+ *      想要直角加 --square。
  *
  * 64px 及以下写成传统 32bpp DIB 条目（所有 Windows shell 代码路径都认），
  * 128/256 写成 PNG 压缩条目。
  *
  * 用法：
- *   node src/build-icon.mjs [输出目录]        # 默认输出到 assets/
+ *   node src/build-icon.mjs                                        # 默认鲸鱼标，输出到 assets/
+ *   node src/build-icon.mjs assets --source assets/icon-source.jpg
+ *   node src/build-icon.mjs out --source logo.png --square
  *   DSH_FAVICON=<路径> node src/build-icon.mjs
  * 依赖 sharp（DSH 自带；没有的话 npm i sharp）。
  */
 import { createRequire } from 'node:module'
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const OUT_DIR = process.argv[2] ?? join(HERE, '..', 'assets')
 const FAVICON_REL = join('@deepseek-ai', 'dsh-web-frontend', 'dist', 'favicon.svg')
 
 const TILE_FILL = '#0F1115' // DSH 深色品牌底色 --dsw-static-neutral-bluish-1000
 const WHALE_FILL = '#FFFFFF'
 const CANVAS = 1024
 const WHALE_RATIO = 0.58
+const CORNER_RATIO = 0.22
 const DIB_SIZES = [16, 24, 32, 48, 64]
 const PNG_SIZES = [128, 256]
+
+// ---- 命令行参数 -------------------------------------------------------------
+const argv = process.argv.slice(2)
+let outDir = null
+let sourceArg = null
+let square = false
+for (let i = 0; i < argv.length; i += 1) {
+  const arg = argv[i]
+  if (arg === '--source' || arg === '-s') sourceArg = argv[++i]
+  else if (arg === '--square') square = true
+  else if (arg === '--help' || arg === '-h') {
+    console.log('用法：node src/build-icon.mjs [输出目录] [--source <图片>] [--square]')
+    process.exit(0)
+  } else if (!arg.startsWith('-') && outDir === null) outDir = arg
+}
+const OUT_DIR = outDir ?? join(HERE, '..', 'assets')
 
 /** 可能装着 @deepseek-ai/dsh 的 node_modules 目录。 */
 function moduleRoots() {
@@ -55,7 +74,7 @@ function findFavicon(roots) {
     const candidate = join(root, FAVICON_REL)
     if (existsSync(candidate)) return candidate
   }
-  throw new Error('找不到 favicon.svg：请设置 DSH_FAVICON=<路径>（该文件在 @deepseek-ai/dsh-web-frontend/dist 下）')
+  throw new Error('找不到 favicon.svg：请设置 DSH_FAVICON=<路径>，或用 --source 指定图片')
 }
 
 async function loadSharp(roots) {
@@ -77,15 +96,24 @@ async function loadSharp(roots) {
 }
 
 const roots = moduleRoots()
-const faviconPath = findFavicon(roots)
 const sharp = await loadSharp(roots)
 
-/** 渲染 1024×1024 母版：圆角底板 + 居中的白色鲸鱼。 */
-async function renderMaster() {
-  const radius = Math.round(CANVAS * 0.22)
+/** 圆角遮罩：只切四个角，不裁掉任何内容。 */
+async function rounded(input, width, height, ratio = CORNER_RATIO) {
+  if (square) return input
+  const radius = Math.round(Math.min(width, height) * ratio)
+  const mask = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`
+    + `<rect width="${width}" height="${height}" rx="${radius}" ry="${radius}" fill="#fff"/></svg>`,
+  )
+  return sharp(input).ensureAlpha().composite([{ input: mask, blend: 'dest-in' }]).png().toBuffer()
+}
+
+/** 默认素材：DSH 鲸鱼标 + 深色圆角底板。 */
+async function renderWhaleTile(faviconPath) {
   const tile = Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS}" height="${CANVAS}">`
-    + `<rect width="${CANVAS}" height="${CANVAS}" rx="${radius}" ry="${radius}" fill="${TILE_FILL}"/></svg>`,
+    + `<rect width="${CANVAS}" height="${CANVAS}" rx="${Math.round(CANVAS * CORNER_RATIO)}" ry="${Math.round(CANVAS * CORNER_RATIO)}" fill="${TILE_FILL}"/></svg>`,
   )
   const svg = readFileSync(faviconPath, 'utf8')
   if (!svg.includes('fill="#000"')) throw new Error('favicon.svg 里没有预期的 fill="#000"，上游图形可能改过了')
@@ -98,6 +126,18 @@ async function renderMaster() {
     .png()
     .toBuffer()
   return sharp(tile).composite([{ input: whale, gravity: 'center' }]).png().toBuffer()
+}
+
+/** 自定义素材：等比缩放完整放入画布，绝不裁切，只处理四角。 */
+async function renderFromImage(imagePath) {
+  const meta = await sharp(imagePath).metadata()
+  const fitted = await sharp(imagePath)
+    .resize(CANVAS, CANVAS, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer()
+  const master = await rounded(fitted, CANVAS, CANVAS)
+  console.log(`素材：${imagePath}（原始 ${meta.width}×${meta.height}，等比缩放完整放入 ${CANVAS}×${CANVAS}，未裁切）`)
+  return master
 }
 
 /** ICO 目录项（16 字节）。 */
@@ -142,7 +182,17 @@ async function dibEntry(master, size) {
   return Buffer.concat([info, xor, mask])
 }
 
-const master = await renderMaster()
+let master
+if (sourceArg) {
+  const sourcePath = resolve(sourceArg)
+  if (!existsSync(sourcePath)) throw new Error(`素材不存在：${sourcePath}`)
+  master = await renderFromImage(sourcePath)
+} else {
+  const faviconPath = findFavicon(roots)
+  console.log(`素材：${faviconPath}`)
+  master = await renderWhaleTile(faviconPath)
+}
+
 const images = []
 for (const size of DIB_SIZES) images.push({ size, bytes: await dibEntry(master, size) })
 for (const size of PNG_SIZES) {
@@ -165,5 +215,4 @@ const ico = Buffer.concat([header, ...directory, ...payload])
 
 writeFileSync(join(OUT_DIR, 'dsh.ico'), ico)
 writeFileSync(join(OUT_DIR, 'preview-256.png'), images.find((i) => i.size === 256).bytes)
-console.log(`素材：${faviconPath}`)
 console.log(`dsh.ico：${ico.length} 字节，${images.length} 个尺寸（${images.map((i) => i.size).join('/')}）`)
