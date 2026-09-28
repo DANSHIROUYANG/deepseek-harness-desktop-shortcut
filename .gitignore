@@ -1,0 +1,4 @@
+# 启动器运行时产物：只出现在 %USERPROFILE%\.dsh\launcher，不该进仓库
+*.log
+dsh-web.pid
+dsh-dryrun.txt
